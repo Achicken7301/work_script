@@ -167,23 +167,6 @@ def insert_row_xlwings(wb, sheetname, start_row, data: list):
             xw.constants.BorderWeight.xlMedium
         )  # 2 for xlThin (adjust as needed)
 
-
-def ExcelProcess(file: str):
-    book = xw.Book(file)
-    sheet = book.sheets[INPUT_SHEET]
-    job_infos = sheet.range(JOB_INFO_RANGE).value
-    insert_job_info(book, job_infos)
-
-    # all_data = sheet.used_range.value
-    # none_arr = [None] * len(all_data[0])
-    # for d_row in all_data[::-1]:
-    #     if d_row != none_arr:
-    #         insert_row_xlwings(book, TEMPLATE_SHEET, START_ADD_ROW, d_row)
-
-
-filepath = "Book1_copy.xlsm"
-
-
 def insert_job_info(book, job_infos):
     # hard code but no choice
     internal_job = job_infos[1][0]
@@ -195,7 +178,7 @@ def insert_job_info(book, job_infos):
     temp_sheet = book.sheets[TEMPLATE_SHEET]
     temp_sheet.range("B3").value = internal_job
 
-# Input User_vi/User_en
+    # Input User_vi/User_en
     user_cell = temp_sheet.range(f"D5")
     text0 = user_vi + SEPERATOR + user_en
     user_cell.value = text0
@@ -208,9 +191,30 @@ def insert_job_info(book, job_infos):
     temp_sheet.range("D6").value = model
     temp_sheet.range("I6").value = sn
 
+    # Insert suitable image
+
+
+def ExcelProcess(file: str):
+    book = xw.Book(file)
+    sheet = book.sheets[INPUT_SHEET]
+    job_infos = sheet.range(JOB_INFO_RANGE).value
+    insert_job_info(book, job_infos)
+    # insert_job_conclusion(book, job_infos)
+
+    all_data = sheet.used_range.value
+    none_arr = [None] * len(all_data[0])
+    for d_row in all_data[::-1]:
+        if d_row != none_arr:
+            insert_row_xlwings(book, TEMPLATE_SHEET, START_ADD_ROW, d_row)
+
+
+# filepath = "Book1_copy.xlsm"
+
+
+
 
 def main():
-    # filepath = sys.argv[1]
+    filepath = sys.argv[1]
     print("Processing:", filepath)
     ExcelProcess(file=filepath)
 
