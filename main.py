@@ -1,11 +1,14 @@
 import sys
+from tempfile import template
 import xlwings as xw
 
-TEMPLATE_SHEET = "template"
+OUTPUT_SHEET = "Sheet1"
 INPUT_SHEET = "Input"
+TEMPLATE_SHEET = "template"
+TEMPLATE_SHEET_RANGE = f"A2:K5"
 CELL_HEIGH = 120
 
-START_ADD_ROW = 13
+START_ADD_ROW = 11
 PHENO_VI = "Hiện Trạng"
 PHENO_EN = "Phenomenon"
 JUD_VI = "Đánh giá"
@@ -28,19 +31,15 @@ MODEL_ROW = 7
 SN_ROW = 8
 
 JOB_INFO_RANGE = f"F1:I3"
+JOB_PROBS_RANGE = f"A2:D21"
 
-
-def insert_infos():
-    pass
-
-
-def insert_conclusion():
-    pass
+INTERNAL_JOB_CELL = "B3"
+USER_CELL = "D5"
 
 
 def format_R_cells(sheet, start_row):
     cell_g3 = sheet.range(f"G{start_row+3}")
-    cell_g3.value = M_VI + SEPERATOR + M_EN
+    cell_g3.value = R_VI + SEPERATOR + R_EN
     # cell_g3.font.color = (255, 255, 255)  # WHITE
     cell_g3.font.color = (0, 0, 0)  # Black
     sheet.range(f"G{start_row+3}").characters[0 : len(cell_g3.value)].font.bold = False
@@ -71,9 +70,6 @@ def insert_row_xlwings(wb, sheetname, start_row, data: list):
     # wb = app.books.open(filepath)
     # wb = xw.apps.active.books[filepath]
     sheet = wb.sheets[sheetname]
-    # print(
-    #     f"Receive data: {data[DATA_PART_POS]},{data[DATA_VI]},{data[DATA_EN]},{data[DATA_M_R]}"
-    # )
 
     # 1. Insert 4 new rows tại start_row
     for _ in range(4):
@@ -167,26 +163,26 @@ def insert_row_xlwings(wb, sheetname, start_row, data: list):
             xw.constants.BorderWeight.xlMedium
         )  # 2 for xlThin (adjust as needed)
 
+
 def insert_job_info(book, job_infos):
     # hard code but no choice
-    internal_job = job_infos[1][0]
-    user_en = job_infos[1][1]
-    user_vi = job_infos[2][1]
-    model = job_infos[1][2]
-    sn = job_infos[1][3]
+    [internal_job, model, sn, user_en] = job_infos[1]
+    user_vi = job_infos[2][3]
+    for i in [internal_job, model, sn, user_en]:
+        print(i)
 
-    temp_sheet = book.sheets[TEMPLATE_SHEET]
+    temp_sheet = book.sheets[OUTPUT_SHEET]
     temp_sheet.range("B3").value = internal_job
 
     # Input User_vi/User_en
-    user_cell = temp_sheet.range(f"D5")
+    user_cell = temp_sheet.range(USER_CELL)
     text0 = user_vi + SEPERATOR + user_en
     user_cell.value = text0
     index = text0.find(SEPERATOR)
-    temp_sheet.range(f"D5").characters[0:index].font.bold = False
-    temp_sheet.range(f"D5").characters[index : len(text0)].font.italic = True
-    temp_sheet.range(f"D5").characters[index : len(text0)].font.bold = False
-    temp_sheet.range(f"D5").api.HorizontalAlignment = xw.constants.HAlign.xlHAlignLeft
+    temp_sheet.range(USER_CELL).characters[0:index].font.bold = False
+    temp_sheet.range(USER_CELL).characters[index : len(text0)].font.italic = True
+    temp_sheet.range(USER_CELL).characters[index : len(text0)].font.bold = False
+    temp_sheet.range(USER_CELL).api.HorizontalAlignment = xw.constants.HAlign.xlHAlignLeft
 
     temp_sheet.range("D6").value = model
     temp_sheet.range("I6").value = sn
@@ -194,28 +190,94 @@ def insert_job_info(book, job_infos):
     # Insert suitable image
 
 
+def copy_insert_row_xlwings(wb: xw.Book, start_row: int, d_row: list):
+    """copy from template rows then paste, more efficency than create the whole thing from scratch
+
+    Args:
+        wb (xw.Book): The current book
+        start_row (int): The row which we want to insert new data into
+        d_row (list): list (array) of data get from workbook
+    """
+    [d_row_part, d_row_probs_vi, d_row_probs_en, d_row_m_or_r] = d_row
+    output_sheet = wb.sheets[OUTPUT_SHEET]
+    template_sheet = wb.sheets[TEMPLATE_SHEET]
+
+
+    src_range = template_sheet.range(TEMPLATE_SHEET_RANGE)
+
+    for _ in range(4):
+        output_sheet.range(f"A{start_row}").api.EntireRow.Insert()
+
+    # 2. Set row height của row thứ hai (start_row + 1) bằng 120 pixel
+    output_sheet.range(f"{start_row + 1}:{start_row + 1}").row_height = CELL_HEIGH
+
+    # 3 Paste into new 4 rows
+    dest_range = output_sheet.range(f"A{start_row}:K{start_row+3}")
+    src_range.api.Copy(dest_range.api)  # This keeps values + formatting
+
+    # 4 Set row height for A[start_row+1]:K[start_row+1]
+    output_sheet.range(f"A{start_row+1}:K{start_row+1}").row_height = 120
+    
+    # 5. Merge cells and pass input
+    cell_a0 = output_sheet.range(f"A{start_row}:B{start_row+3}")
+    a0_value = d_row_part
+    a0_value_index = a0_value.find(chr(10))
+    cell_a0.value = a0_value
+    cell_a0.api.HorizontalAlignment = xw.constants.HAlign.xlHAlignCenter
+    output_sheet.range(f"A{start_row}").characters[0:a0_value_index].font.bold = True
+    output_sheet.range(f"A{start_row}").characters[
+        a0_value_index : len(a0_value)
+    ].font.italic = True
+    output_sheet.range(f"A{start_row}").characters[
+        a0_value_index : len(a0_value)
+    ].font.bold = False
+
+    cell_c2 = output_sheet.range(f"C{start_row+1}:G{start_row+1}")
+    c2_value = d_row_probs_vi + chr(10) + d_row_probs_en
+    cell_c2.value = c2_value
+    c2_value_index = c2_value.find(chr(10))
+    cell_c2.api.HorizontalAlignment = xw.constants.HAlign.xlHAlignCenter
+    output_sheet.range(f"C{start_row+1}").characters[0:c2_value_index].font.bold = False
+    output_sheet.range(f"C{start_row+1}").characters[
+        c2_value_index : len(c2_value)
+    ].font.italic = True
+    output_sheet.range(f"C{start_row+1}").characters[
+        c2_value_index : len(c2_value)
+    ].font.bold = False
+
+    # 6. G[start_row+3]: text trắng, căn phải
+    if d_row_m_or_r == 1:
+        format_M_cells(sheet=output_sheet, start_row=start_row)
+    else:
+        format_R_cells(sheet=output_sheet, start_row=start_row)
+
+
+def insert_conclusion(wb:xw.Book, data):
+    pass
+
+
 def ExcelProcess(file: str):
     book = xw.Book(file)
     sheet = book.sheets[INPUT_SHEET]
     job_infos = sheet.range(JOB_INFO_RANGE).value
+    all_data = sheet.range(JOB_PROBS_RANGE).value
+
+
     insert_job_info(book, job_infos)
     # insert_job_conclusion(book, job_infos)
 
-    all_data = sheet.used_range.value
     none_arr = [None] * len(all_data[0])
     for d_row in all_data[::-1]:
         if d_row != none_arr:
-            insert_row_xlwings(book, TEMPLATE_SHEET, START_ADD_ROW, d_row)
+            copy_insert_row_xlwings(book, START_ADD_ROW, d_row)
+            # insert_row_xlwings(book, TEMPLATE_SHEET, START_ADD_ROW,
 
 
-# filepath = "Book1_copy.xlsm"
-
-
-
+# filepath = "Book1.xlsm"
 
 def main():
     filepath = sys.argv[1]
-    print("Processing:", filepath)
+    # print("Processing:", filepath)
     ExcelProcess(file=filepath)
 
 
