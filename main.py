@@ -179,7 +179,7 @@ def insert_job_info(book, job_infos):
     text0 = user_vi + SEPERATOR + user_en
     user_cell.value = text0
     index = text0.find(SEPERATOR)
-    temp_sheet.range(USER_CELL).characters[0:index].font.bold = False
+    temp_sheet.range(USER_CELL).characters[0:index].font.bold = True
     temp_sheet.range(USER_CELL).characters[index : len(text0)].font.italic = True
     temp_sheet.range(USER_CELL).characters[index : len(text0)].font.bold = False
     temp_sheet.range(USER_CELL).api.HorizontalAlignment = xw.constants.HAlign.xlHAlignLeft
@@ -218,7 +218,7 @@ def copy_insert_row_xlwings(wb: xw.Book, start_row: int, d_row: list):
     # 4 Set row height for A[start_row+1]:K[start_row+1]
     output_sheet.range(f"A{start_row+1}:K{start_row+1}").row_height = 120
     
-    # 5. Merge cells and pass input
+    # 5. pass input
     cell_a0 = output_sheet.range(f"A{start_row}:B{start_row+3}")
     a0_value = d_row_part
     a0_value_index = a0_value.find(chr(10))
