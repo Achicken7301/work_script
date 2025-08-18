@@ -1,4 +1,5 @@
 import sys
+import os
 from tempfile import template
 import xlwings as xw
 
@@ -6,6 +7,13 @@ OUTPUT_SHEET = "Sheet1"
 INPUT_SHEET = "Input"
 TEMPLATE_SHEET = "template"
 TEMPLATE_SHEET_RANGE = f"A2:K5"
+JOB_INFO_RANGE = f"F2:K2"
+JOB_PROBS_RANGE = f"A2:D21"
+PATH_DIR_CELL = f"G6"
+NAME_DIR_CELL = f"F3"
+IS_EXPORT_DIR_CELL = f"G5"
+
+USER_CELL = "D5"
 CELL_HEIGH = 120
 
 START_ADD_ROW = 11
@@ -30,11 +38,6 @@ ENDUSER_ROW = 6
 MODEL_ROW = 7
 SN_ROW = 8
 
-JOB_INFO_RANGE = f"F1:I3"
-JOB_PROBS_RANGE = f"A2:D21"
-
-INTERNAL_JOB_CELL = "B3"
-USER_CELL = "D5"
 
 
 def format_R_cells(sheet, start_row):
@@ -166,11 +169,7 @@ def insert_row_xlwings(wb, sheetname, start_row, data: list):
 
 def insert_job_info(book, job_infos):
     # hard code but no choice
-    [internal_job, model, sn, user_en] = job_infos[1]
-    user_vi = job_infos[2][3]
-    for i in [internal_job, model, sn, user_en]:
-        print(i)
-
+    [internal_job, model, sn, user_en, user_vi, issue_date] = job_infos
     temp_sheet = book.sheets[OUTPUT_SHEET]
     temp_sheet.range("B3").value = internal_job
 
@@ -186,6 +185,7 @@ def insert_job_info(book, job_infos):
 
     temp_sheet.range("D6").value = model
     temp_sheet.range("I6").value = sn
+    temp_sheet.range("J3").value = issue_date
 
     # Insert suitable image
 
@@ -252,8 +252,26 @@ def copy_insert_row_xlwings(wb: xw.Book, start_row: int, d_row: list):
         format_R_cells(sheet=output_sheet, start_row=start_row)
 
 
+
 def insert_conclusion(wb:xw.Book, data):
     pass
+
+
+def export2Dir(wb:xw.Book, path:str, name:str):
+    # Copy Sheet1
+    print(f"Export path: {path}\nName: {name}")
+    copy_wb = wb.sheets[OUTPUT_SHEET]
+
+    # Create dir 
+    dir_path =path+"\\"+name 
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+
+    output_wb = xw.Book()
+    # Paste a copy to path dir
+    copy_wb.api.Copy(Before=output_wb.sheets[0].api)
+    output_wb.save(dir_path+"\\"+"TR "+name+".xlsx")
+    output_wb.sheets["Sheet1"].delete()
 
 
 def ExcelProcess(file: str):
@@ -262,7 +280,6 @@ def ExcelProcess(file: str):
     job_infos = sheet.range(JOB_INFO_RANGE).value
     all_data = sheet.range(JOB_PROBS_RANGE).value
 
-
     insert_job_info(book, job_infos)
     # insert_job_conclusion(book, job_infos)
 
@@ -270,7 +287,13 @@ def ExcelProcess(file: str):
     for d_row in all_data[::-1]:
         if d_row != none_arr:
             copy_insert_row_xlwings(book, START_ADD_ROW, d_row)
-            # insert_row_xlwings(book, TEMPLATE_SHEET, START_ADD_ROW,
+            # insert_row_xlwings(book, TEMPLATE_SHEET, START_ADD_ROW)
+    # copy to new file
+    is_export = sheet.range(IS_EXPORT_DIR_CELL).value
+    if is_export:
+        export_path = sheet.range(PATH_DIR_CELL).value
+        export_name = sheet.range(NAME_DIR_CELL).value
+        export2Dir(wb=book, path=export_path, name=export_name)
 
 
 # filepath = "Book1.xlsm"
