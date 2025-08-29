@@ -12,6 +12,8 @@ JOB_PROBS_RANGE = f"A2:D21"
 PATH_DIR_CELL = f"G6"
 NAME_DIR_CELL = f"F3"
 IS_EXPORT_DIR_CELL = f"G5"
+GET_INSPECTOR_NAME = f"G7"
+GET_APPROVER_NAME = f"G8"
 
 USER_CELL = "D5"
 CELL_HEIGH = 120
@@ -168,9 +170,8 @@ def insert_row_xlwings(wb, sheetname, start_row, data: list):
 
 
 def insert_job_info(book, job_infos):
-    # hard code but no choice
-    [internal_job, model, sn, user_en, user_vi, issue_date] = job_infos
     temp_sheet = book.sheets[OUTPUT_SHEET]
+    [internal_job, model, sn, user_en, user_vi, issue_date] = job_infos
     temp_sheet.range("B3").value = internal_job
 
     # Input User_vi/User_en
@@ -279,6 +280,7 @@ def ExcelProcess(file: str):
     sheet = book.sheets[INPUT_SHEET]
     job_infos = sheet.range(JOB_INFO_RANGE).value
     all_data = sheet.range(JOB_PROBS_RANGE).value
+
 
     insert_job_info(book, job_infos)
     # insert_job_conclusion(book, job_infos)
