@@ -7,6 +7,7 @@ OUTPUT_SHEET = "Sheet1"
 INPUT_SHEET = "Input"
 TEMPLATE_SHEET = "template"
 TEMPLATE_SHEET_RANGE = f"A2:K5"
+PERSON_IN_CHARGE_RANGE = f"G7:G8"
 JOB_INFO_RANGE = f"F2:K2"
 JOB_PROBS_RANGE = f"A2:D21"
 PATH_DIR_CELL = f"G6"
@@ -169,9 +170,12 @@ def insert_row_xlwings(wb, sheetname, start_row, data: list):
         )  # 2 for xlThin (adjust as needed)
 
 
-def insert_job_info(book, job_infos):
+def insert_job_info(book, job_infos, per_in_charge):
+    """Hard coded for now"""
     temp_sheet = book.sheets[OUTPUT_SHEET]
     [internal_job, model, sn, user_en, user_vi, issue_date] = job_infos
+    # temp_sheet.range("A32").value = per_in_charge[0]
+    # temp_sheet.range("A36").value = per_in_charge[1]
     temp_sheet.range("B3").value = internal_job
 
     # Input User_vi/User_en
@@ -278,11 +282,13 @@ def export2Dir(wb:xw.Book, path:str, name:str):
 def ExcelProcess(file: str):
     book = xw.Book(file)
     sheet = book.sheets[INPUT_SHEET]
+
+    person_in_charge = sheet.range(PERSON_IN_CHARGE_RANGE).value
     job_infos = sheet.range(JOB_INFO_RANGE).value
     all_data = sheet.range(JOB_PROBS_RANGE).value
 
 
-    insert_job_info(book, job_infos)
+    insert_job_info(book, job_infos, person_in_charge)
     # insert_job_conclusion(book, job_infos)
 
     none_arr = [None] * len(all_data[0])
