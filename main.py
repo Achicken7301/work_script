@@ -267,6 +267,11 @@ def export2Dir(wb:xw.Book, path:str, name:str):
     dir_path =path+"\\"+name 
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
+        
+    # Create images dir 
+    images_path =dir_path+"\\"+"images" 
+    if not os.path.exists(images_path):
+        os.mkdir(images_path)
 
     output_wb = xw.Book()
     # Paste a copy to path dir
